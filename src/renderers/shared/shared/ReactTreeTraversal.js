@@ -96,17 +96,39 @@ function getParentInstance(inst) {
  */
 function traverseTwoPhase(inst, fn, arg) {
   var path = [];
+  var hasDisabledElement = false;
   while (inst) {
+    if (hasDisabledFormElement(inst, hasDisabledElement)) {
+      hasDisabledElement = true;
+    }
     path.push(inst);
     inst = getParent(inst);
   }
   var i;
-  for (i = path.length; i-- > 0; ) {
-    fn(path[i], 'captured', arg);
+  var _path;
+  for (i = path.length; i-- > 0;) {
+    _path = path[i];
+    if (checkDisabledElement(_path.type, hasDisabledElement)) {
+      fn(_path, 'captured', arg);
+    }
   }
   for (i = 0; i < path.length; i++) {
-    fn(path[i], 'bubbled', arg);
+    _path = path[i];
+    if (checkDisabledElement(_path.type, hasDisabledElement)) {
+      fn(_path, 'bubbled', arg);
+    }
   }
+}
+function hasDisabledFormElement(inst, alreadyDisabled) {
+  if (alreadyDisabled) {
+    return false;
+  }
+  var disabledElements = ['form', 'fieldset'];
+  return !!(inst && inst.memoizedProps && inst.memoizedProps.disabled && disabledElements.includes(inst.type));
+}
+function checkDisabledElement(type, hasDisabledElement) {
+  var disabledElements = ['button', 'input', 'textarea', 'select'];
+  return !(disabledElements.includes(type) || hasDisabledElement);
 }
 
 /**
